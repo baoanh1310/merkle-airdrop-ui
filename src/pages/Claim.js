@@ -21,12 +21,14 @@ function Claim() {
             for (let i = 0; i < campaign_id_list.length; i++) {
                 let airdrop_id = campaign_id_list[i];
                 let ft_contract = await window.contract.get_ft_contract_by_campaign({ airdrop_id: airdrop_id });
+                let ft_contract_name = ft_contract
                 ft_contract = new Contract(window.walletConnection.account(), ft_contract, {
                     viewMethods: ['ft_metadata', 'ft_balance_of'],
                 })
                 let metadata = await ft_contract.ft_metadata();
                 let merkle_root = await window.contract.airdrop_merkle_root({ airdrop_id: airdrop_id });
                 metadata['merkle_root'] = merkle_root;
+                metadata['ft_contract_name'] = ft_contract_name
 
                 campaign_info.push(metadata);
             }
@@ -38,7 +40,7 @@ function Claim() {
 
     const numberCampaigns = campaigns.length;
     const title = `Airdrop List (${numberCampaigns} campaigns)`
-    const items = campaigns.map((item, k) => <CampaignItem key={k} name={item.name} symbol={item.symbol} icon={item.icon} merkle_root={item.merkle_root} />)
+    const items = campaigns.map((item, k) => <CampaignItem key={k} name={item.name} symbol={item.symbol} icon={item.icon} merkle_root={item.merkle_root} ft_contract_name={item.ft_contract_name} />)
 
     return (
         <div>
@@ -55,14 +57,15 @@ function Claim() {
     )
 }
 
-const CampaignItem = ({name, symbol, icon, merkle_root}) => {
+const CampaignItem = ({name, symbol, icon, merkle_root, ft_contract_name}) => {
     const content = name.concat(" (").concat(symbol).concat(")");
+    const href = nearConfig.explorerUrl + "/accounts/" + ft_contract_name;
     const description = `Merkle root: ${merkle_root}`
     return (
         <List.Item style={{width: "70vw", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
             <List.Item.Meta 
                 avatar={<Avatar src={icon} size={"large"} style={{border: "1px solid gray"}}/>}
-                title={<a href="#">{content}</a>}
+                title={<a href={href} target="_blank">{content}</a>}
                 description={description}
             />
             <Button type="primary" ghost>
