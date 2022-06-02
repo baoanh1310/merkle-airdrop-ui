@@ -59,12 +59,15 @@ const CampaignItem = ({name, symbol, icon, merkle_root}) => {
     const content = name.concat(" (").concat(symbol).concat(")");
     const description = `Merkle root: ${merkle_root}`
     return (
-        <List.Item style={{width: "640px"}}>
+        <List.Item style={{width: "70vw", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
             <List.Item.Meta 
                 avatar={<Avatar src={icon} size={"large"} style={{border: "1px solid gray"}}/>}
                 title={<a href="#">{content}</a>}
                 description={description}
             />
+            <Button type="primary" ghost>
+                Claim
+            </Button>
         </List.Item>
     )
 }
