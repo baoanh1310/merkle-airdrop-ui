@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react'
-import {Button, Input, List, PageHeader, notification, Form} from "antd";
+import {Button, Input, Upload, notification, Form} from "antd";
+import { UploadOutlined } from "@ant-design/icons";
 import { utils, transactions, accountCreator, Contract } from "near-api-js";
 import {login, parseTokenWithDecimals, buildMerkleTree} from "../utils";
 import { functionCall } from 'near-api-js/lib/transaction';
-import getConfig from '../config'
+import getConfig from '../config';
 
 const nearConfig = getConfig(process.env.NODE_ENV || 'development')
 
@@ -13,6 +14,7 @@ function Homepage() {
     const [ft_balance, setFtBalane] = useState(0.0);
     const [userAddresses, setUserAddresses] = useState("");
     const [tokenAddress, setTokenAddress] = useState("");
+    const [csvFile, setCSVFile] = useState(null);
 
     const onFinish = async () => {
         let tree = buildMerkleTree(leave);
@@ -31,7 +33,7 @@ function Homepage() {
                 notification["warning"]({
                     message: `Số dư ${ft_name} không đủ`,
                     description:
-                    'Tài khoản của bạn không đủ số dư tạo airdrop!',
+                    'Tài khoản của bạn không đủ số dư để tạo airdrop!',
                 });
                 return;
             }
@@ -93,8 +95,42 @@ function Homepage() {
         setFtBalane(balance);
     }
 
+    const handleCSVFileChange = async (e) => {
+        e.preventDefault()
+        const reader = new FileReader()
+        reader.onload = async (e) => { 
+            const text = (e.target.result)
+            let arr = text.split('\n')
+            let lines = []
+            for (let line of arr) {
+                let subarr = line.split(',')
+                let newLine = subarr.join(' ')
+                lines.push(newLine)
+            }
+            let addresses = lines.join('\n')
+            let preview = document.getElementById('userAddresses');
+            preview.innerHTML = addresses
+            let l = [];
+            let balance = 0.0;
+            let regex = /\s+/;
+            for (let address of lines) {
+                let line = address.trim();
+                if (line != '') {
+                    l.push(line);
+                    let arr = line.split(regex);
+                    balance += parseFloat(arr[1])
+                }
+            }
+            setUserAddresses(addresses)
+            setLeave(l);
+            setFtBalane(balance);
+        };
+        reader.readAsText(e.target.files[0])
+    }
+
     console.log("token address: ", tokenAddress);
     console.log("leave: ", leave);
+    console.log("user addresses: ", userAddresses);
     console.log("balance: ", ft_balance);
 
     return (
@@ -138,7 +174,14 @@ function Homepage() {
                         },
                     ]}
                 >
-                    <Input.TextArea rows={20} value={userAddresses} onChange={handleLeaveChange} />
+                    <textarea id="userAddresses" rows={20} cols={50} value={userAddresses} onChange={handleLeaveChange} />
+                </Form.Item>
+
+                <Form.Item
+                    name="upload"
+                    label="Upload CSV"
+                >
+                    <input type="file" onChange={handleCSVFileChange} />
                 </Form.Item>
 
                 <Form.Item
@@ -152,6 +195,7 @@ function Homepage() {
                     </Button>
                 </Form.Item>
             </Form>
+        
         </div>
     )
 }

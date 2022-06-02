@@ -1,5 +1,5 @@
 {
-  "name": "nft-market-frontend-pik",
+  "name": "merkle-airdrop-ui",
   "version": "0.1.0",
   "license": "UNLICENSED",
   "scripts": {
@@ -29,10 +29,13 @@
   },
   "dependencies": {
     "@ant-design/icons": "^4.7.0",
+    "@libp2p/logger": "^1.1.5",
     "antd": "^4.18.3",
     "bn.js": "^5.2.0",
     "borsh": "latest",
     "crypto-js": "^4.1.1",
+    "ipfs-core": "^0.15.1",
+    "ipfs-http-client": "^57.0.1",
     "merkletreejs": "^0.2.31",
     "near-api-js": "~0.43.1",
     "react": "~17.0.1",
