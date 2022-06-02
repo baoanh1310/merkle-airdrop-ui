@@ -48,30 +48,33 @@ const CampaignItem = ({airdrop_id, ft_symbol, ft_icon, owner, ft_name, leave}) =
     const content = ft_name.concat(" (").concat(ft_symbol).concat(")");
     const href = nearConfig.explorerUrl + "/accounts/" + ft_name;
     const description = `Campaign owner: ${owner}`;
-    console.log("Airdrop_id: ", airdrop_id)
+
+    const tree = buildMerkleTree(leave)
+    let regex = /\s+/;
+    let leaf = ''
+    let amount = 0
+    for (let l of leave) {
+        let arr = l.split(regex)
+        let account = arr[0]
+        if (account != window.accountId) continue
+        else {
+            amount = parseInt(arr[1])
+            leaf = SHA256(l)
+            break
+        }
+    }
+    const proof = getProof(tree, leaf)
+    console.log(`Airdrop ${airdrop_id}: ${amount} token`)
     
     const handleClaim = async () => {
-        const tree = buildMerkleTree(leave)
-        let regex = /\s+/;
-        let leaf = ''
-        let amount = 0
-        for (let l of leave) {
-            let arr = l.split(regex)
-            let account = arr[0]
-            if (account != window.accountId) continue
-            else {
-                amount = parseInt(arr[1])
-                leaf = SHA256(l)
-                break
-            }
-        }
-        const proof = getProof(tree, leaf)
+        
         try {
             let result = await window.contract.claim({
                 airdrop_id: airdrop_id,
                 proof: proof,
                 amount: amount
             })
+            window.location.reload()
         } catch (e) {
             console.log(e)
         }
@@ -85,10 +88,44 @@ const CampaignItem = ({airdrop_id, ft_symbol, ft_icon, owner, ft_name, leave}) =
                 title={<a href={href} target="_blank">{content}</a>}
                 description={description}
             />
-            <Button type="primary" ghost onClick={handleClaim}>
-                Claim
-            </Button>
+            <Btn airdrop_id={airdrop_id} proof={proof} handleClaim={handleClaim} />
         </List.Item>
+    )
+}
+
+const Btn = ({ airdrop_id, proof, handleClaim }) => {
+    let btn;
+    console.log(`Proof: ${airdrop_id}`, proof)
+    console.log("AirdropId: ", airdrop_id)
+    const [isIssued, setIsIssued] = useState(false);
+    useEffect(async () => {
+        let issue = await window.contract.check_issued_account({
+            airdrop_id: airdrop_id,
+            account_id: window.accountId
+        })
+        setIsIssued(issue)
+    }, [])
+    if (proof.length != 0) {
+        if (!isIssued) {
+            btn = <div>
+                <Button type="primary" ghost onClick={handleClaim}>
+                    Claim
+                </Button>
+            </div>
+        } else {
+            btn = <div>
+                <Button type="primary" disabled onClick={handleClaim}>
+                    Claimed!
+                </Button>
+            </div>
+        }
+    } else {
+        btn = <div></div>
+    }
+    return (
+        <div>
+            {btn}
+        </div>
     )
 }
 
