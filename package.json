@@ -31,6 +31,7 @@
     "@ant-design/icons": "^4.7.0",
     "@libp2p/logger": "^1.1.5",
     "antd": "^4.18.3",
+    "axios": "^0.27.2",
     "bn.js": "^5.2.0",
     "borsh": "latest",
     "crypto-js": "^4.1.1",

@@ -2,6 +2,8 @@ import { connect, Contract, keyStores, WalletConnection } from 'near-api-js'
 import getConfig from './config'
 import { MerkleTree } from 'merkletreejs'
 import SHA256 from 'crypto-js/sha256'
+import { baseEncode, baseDecode } from 'borsh'
+import nacl from 'tweetnacl'
 
 const nearConfig = getConfig(process.env.NODE_ENV || 'development')
 
@@ -17,7 +19,7 @@ export async function initContract() {
   // Getting the Account ID. If still unauthorized, it's just empty string
   window.accountId = window.walletConnection.getAccountId()
 
-  window.account = window.walletConnection.account();
+  window.account = window.walletConnection.account()
 
   window.contract = await new Contract(window.walletConnection.account(), nearConfig.contractName, {
     // View methods are read only. They don't modify the state, but usually return some value.
@@ -34,12 +36,14 @@ export function logout() {
   window.location.replace(window.location.origin + window.location.pathname)
 }
 
-export function login() {
+export async function login() {
   // Allow the current app to make calls to the specified contract on the
   // user's behalf.
   // This works by creating a new access key for the user's account and storing
   // the private key in localStorage.
+  
   window.walletConnection.requestSignIn(nearConfig.contractName)
+
 }
 
 export function parseTokenWithDecimals(amount, decimals) {

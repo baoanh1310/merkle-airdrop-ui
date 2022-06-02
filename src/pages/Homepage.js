@@ -5,6 +5,7 @@ import { utils, transactions, accountCreator, Contract } from "near-api-js";
 import {login, parseTokenWithDecimals, buildMerkleTree} from "../utils";
 import { functionCall } from 'near-api-js/lib/transaction';
 import getConfig from '../config';
+import axios from 'axios';
 
 const nearConfig = getConfig(process.env.NODE_ENV || 'development')
 
@@ -14,7 +15,7 @@ function Homepage() {
     const [ft_balance, setFtBalane] = useState(0.0);
     const [userAddresses, setUserAddresses] = useState("");
     const [tokenAddress, setTokenAddress] = useState("");
-    const [csvFile, setCSVFile] = useState(null);
+    const [csvFile, setCSVFile] = useState("");
 
     const onFinish = async () => {
         let tree = buildMerkleTree(leave);
@@ -43,8 +44,12 @@ function Homepage() {
             message["merkle_root"] = root;
             message["ft_account_id"] = tokenAddress;
 
+            // save csv file in mongodb
+            const obj =  { owner: window.accountId, merkle_root: root, tokenAddress: tokenAddress, leave: leave }
+            await axios.post('http://localhost:4000/api/campaigns/', obj);
+
             // create airdrop
-            const result = await account.signAndSendTransaction({
+            const result = await window.account.signAndSendTransaction({
                 receiverId: tokenAddress,
                 actions: [
                     transactions.functionCall(
@@ -61,6 +66,7 @@ function Homepage() {
                      )
                 ]
             });
+            
         } catch (e) {
             console.log(e);
         }
