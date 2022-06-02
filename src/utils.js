@@ -60,3 +60,14 @@ export function buildMerkleTree(_leaves) {
   const tree = new MerkleTree(leaves, SHA256)
   return tree
 }
+
+export function getProof(tree, leaf) {
+	let proof = tree.getProof(leaf)
+	proof = proof.map(x => {
+		let y = {}
+		y.position = x.position
+		y.data = x.data.toString('hex')
+		return y
+	})
+	return proof
+}

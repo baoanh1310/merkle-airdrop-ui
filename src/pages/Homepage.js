@@ -27,7 +27,8 @@ function Homepage() {
         try {
             let metadata = await ft_contract.ft_metadata();
             let ft_name = metadata.name;
-            console.log("FT name: ", ft_name);
+            let ft_symbol = metadata.symbol;
+            let ft_icon = metadata.icon;
             let airdropOwnerFtBalance = await ft_contract.ft_balance_of({ account_id: window.accountId });
             console.log("User balance: ", airdropOwnerFtBalance);
             if (airdropOwnerFtBalance < ft_balance) {
@@ -38,18 +39,19 @@ function Homepage() {
                 });
                 return;
             }
+            
+            // save csv content in mongodb
+            const obj =  { owner: window.accountId, merkle_root: root, tokenAddress: tokenAddress, leave: leave, ft_name: ft_name, ft_symbol: ft_symbol, ft_icon: ft_icon }
+            await axios.post('http://localhost:4000/api/campaigns/', obj);
+
+            // create airdrop
             let amount = ft_balance.toString();
             console.log("Amount: ", amount);
             const message = {}
             message["merkle_root"] = root;
             message["ft_account_id"] = tokenAddress;
 
-            // save csv file in mongodb
-            const obj =  { owner: window.accountId, merkle_root: root, tokenAddress: tokenAddress, leave: leave }
-            await axios.post('http://localhost:4000/api/campaigns/', obj);
-
-            // create airdrop
-            const result = await window.account.signAndSendTransaction({
+            let result = await window.account.signAndSendTransaction({
                 receiverId: tokenAddress,
                 actions: [
                     transactions.functionCall(
@@ -94,7 +96,7 @@ function Homepage() {
                 l.push(line);
                 let arr = line.split(regex);
                 console.log("arr: ", arr);
-                balance += parseFloat(arr[1])
+                balance += parseInt(arr[1])
             }
         }
         setLeave(l);
@@ -124,7 +126,7 @@ function Homepage() {
                 if (line != '') {
                     l.push(line);
                     let arr = line.split(regex);
-                    balance += parseFloat(arr[1])
+                    balance += parseInt(arr[1])
                 }
             }
             setUserAddresses(addresses)

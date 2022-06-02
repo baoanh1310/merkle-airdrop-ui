@@ -1,12 +1,11 @@
 import React, { useEffect, useState} from 'react'
 import {Button, PageHeader, notification, List, Avatar} from "antd";
-import {SendOutlined, DollarCircleOutlined, EllipsisOutlined } from "@ant-design/icons";
 import {default as PublicKey, transactions, utils, Contract} from "near-api-js"
-import { functionCall, createTransaction } from "near-api-js/lib/transaction";
-import {login, parseTokenAmount} from "../utils";
-import BN from "bn.js";
-import {baseDecode} from "borsh";
 import getConfig from '../config'
+import axios from 'axios';
+import { MerkleTree } from 'merkletreejs'
+import SHA256 from 'crypto-js/sha256'
+import { buildMerkleTree, getProof } from '../utils';
 
 const nearConfig = getConfig(process.env.NODE_ENV || 'development')
 
@@ -16,31 +15,19 @@ function Claim() {
 
     useEffect(async () => {
         try {
-            let campaign_id_list = await window.contract.get_all_campaigns();
-            let campaign_info = [];
-            for (let i = 0; i < campaign_id_list.length; i++) {
-                let airdrop_id = campaign_id_list[i];
-                let ft_contract = await window.contract.get_ft_contract_by_campaign({ airdrop_id: airdrop_id });
-                let ft_contract_name = ft_contract
-                ft_contract = new Contract(window.walletConnection.account(), ft_contract, {
-                    viewMethods: ['ft_metadata', 'ft_balance_of'],
-                })
-                let metadata = await ft_contract.ft_metadata();
-                let merkle_root = await window.contract.airdrop_merkle_root({ airdrop_id: airdrop_id });
-                metadata['merkle_root'] = merkle_root;
-                metadata['ft_contract_name'] = ft_contract_name
-
-                campaign_info.push(metadata);
-            }
-            setCampaigns(campaign_info);
+            let response = await axios.get('http://localhost:4000/api/campaigns');
+            console.log(response)
+            let campaign_list = response["data"]["data"]["result"];
+            setCampaigns(campaign_list);
         } catch (e) {
             console.log(e);
         }
     }, [])
 
+
     const numberCampaigns = campaigns.length;
     const title = `Airdrop List (${numberCampaigns} campaigns)`
-    const items = campaigns.map((item, k) => <CampaignItem key={k} name={item.name} symbol={item.symbol} icon={item.icon} merkle_root={item.merkle_root} ft_contract_name={item.ft_contract_name} />)
+    const items = campaigns.map((item, k) => <CampaignItem key={k} airdrop_id={k+1} leave={item.leave} ft_symbol={item.ft_symbol} ft_icon={item.ft_icon} owner={item.owner} ft_name={item.ft_name} />)
 
     return (
         <div>
@@ -57,18 +44,48 @@ function Claim() {
     )
 }
 
-const CampaignItem = ({name, symbol, icon, merkle_root, ft_contract_name}) => {
-    const content = name.concat(" (").concat(symbol).concat(")");
-    const href = nearConfig.explorerUrl + "/accounts/" + ft_contract_name;
-    const description = `Merkle root: ${merkle_root}`
+const CampaignItem = ({airdrop_id, ft_symbol, ft_icon, owner, ft_name, leave}) => {
+    const content = ft_name.concat(" (").concat(ft_symbol).concat(")");
+    const href = nearConfig.explorerUrl + "/accounts/" + ft_name;
+    const description = `Campaign owner: ${owner}`;
+    console.log("Airdrop_id: ", airdrop_id)
+    
+    const handleClaim = async () => {
+        const tree = buildMerkleTree(leave)
+        let regex = /\s+/;
+        let leaf = ''
+        let amount = 0
+        for (let l of leave) {
+            let arr = l.split(regex)
+            let account = arr[0]
+            if (account != window.accountId) continue
+            else {
+                amount = parseInt(arr[1])
+                leaf = SHA256(l)
+                break
+            }
+        }
+        const proof = getProof(tree, leaf)
+        try {
+            let result = await window.contract.claim({
+                airdrop_id: airdrop_id,
+                proof: proof,
+                amount: amount
+            })
+        } catch (e) {
+            console.log(e)
+        }
+        
+    }
+
     return (
         <List.Item style={{width: "70vw", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
             <List.Item.Meta 
-                avatar={<Avatar src={icon} size={"large"} style={{border: "1px solid gray"}}/>}
+                avatar={<Avatar src={ft_icon} size={"large"} style={{border: "1px solid gray"}}/>}
                 title={<a href={href} target="_blank">{content}</a>}
                 description={description}
             />
-            <Button type="primary" ghost>
+            <Button type="primary" ghost onClick={handleClaim}>
                 Claim
             </Button>
         </List.Item>
