@@ -27,7 +27,7 @@ function Claim() {
 
     const numberCampaigns = campaigns.length;
     const title = `Airdrop List (${numberCampaigns} campaigns)`
-    const items = campaigns.map((item, k) => <CampaignItem key={k} airdrop_id={k+1} leave={item.leave} ft_symbol={item.ft_symbol} ft_icon={item.ft_icon} owner={item.owner} ft_name={item.ft_name} />)
+    const items = campaigns.map((item, k) => <CampaignItem key={k} merkle_root={item.merkle_root} airdrop_id={k+1} leave={item.leave} ft_symbol={item.ft_symbol} ft_icon={item.ft_icon} owner={item.owner} ft_name={item.ft_name} />)
 
     return (
         <div>
@@ -44,27 +44,30 @@ function Claim() {
     )
 }
 
-const CampaignItem = ({airdrop_id, ft_symbol, ft_icon, owner, ft_name, leave}) => {
+const CampaignItem = ({airdrop_id, ft_symbol, ft_icon, owner, ft_name, leave, merkle_root}) => {
     const content = ft_name.concat(" (").concat(ft_symbol).concat(")");
     const href = nearConfig.explorerUrl + "/accounts/" + ft_name;
     const description = `Campaign owner: ${owner}`;
+    console.log(`Merkle root: ${airdrop_id}`, merkle_root)
 
     const tree = buildMerkleTree(leave)
     let regex = /\s+/;
-    let leaf = ''
+    let leaf = '';
     let amount = 0
     for (let l of leave) {
         let arr = l.split(regex)
         let account = arr[0]
-        if (account != window.accountId) continue
-        else {
+        console.log(arr)
+        console.log("leaf: ", l)
+        if (account == window.accountId) {
             amount = parseInt(arr[1])
             leaf = SHA256(l)
             break
         }
+         
     }
     const proof = getProof(tree, leaf)
-    console.log(`Airdrop ${airdrop_id}: ${amount} token`)
+    console.log(`Airdrop ${airdrop_id} of ${window.accountId}: ${amount} token`)
     
     const handleClaim = async () => {
         
