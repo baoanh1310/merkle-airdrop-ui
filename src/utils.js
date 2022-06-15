@@ -1,8 +1,8 @@
-import { connect, Contract, keyStores, WalletConnection } from 'near-api-js'
+import { connect, Contract, keyStores, WalletConnection, transactions, utils } from 'near-api-js'
 import getConfig from './config'
 import { MerkleTree } from 'merkletreejs'
 import SHA256 from 'crypto-js/sha256'
-import { baseEncode, baseDecode } from 'borsh'
+import BN from 'bn.js';
 import nacl from 'tweetnacl'
 
 const nearConfig = getConfig(process.env.NODE_ENV || 'development')
@@ -21,13 +21,14 @@ export async function initContract() {
 
   window.account = window.walletConnection.account()
 
-  window.contract = await new Contract(window.walletConnection.account(), nearConfig.contractName, {
+  window.contract = new Contract(window.walletConnection.account(), nearConfig.contractName, {
     // View methods are read only. They don't modify the state, but usually return some value.
     viewMethods: ['get_all_campaigns', 'get_ft_contract_by_campaign', 'check_issued_account', 'total_number_airdrop_campaigns', 
       'number_airdrop_campaigns_by_account', 'airdrop_campaigns_by_account', 'airdrop_merkle_root'],
     // Change methods can modify the state. But you don't receive the returned value when called.
     changeMethods: ['claim', 'get_ft_decimals'],
   })
+
 }
 
 export function logout() {

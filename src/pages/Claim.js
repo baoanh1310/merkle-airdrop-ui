@@ -1,11 +1,12 @@
 import React, { useEffect, useState} from 'react'
-import {Button, PageHeader, notification, List, Avatar} from "antd";
+import {Button, PageHeader, Spin, List, Avatar} from "antd";
 import {default as PublicKey, transactions, utils, Contract} from "near-api-js"
 import getConfig from '../config'
 import axios from 'axios';
 import { MerkleTree } from 'merkletreejs'
 import SHA256 from 'crypto-js/sha256'
 import { buildMerkleTree, getProof } from '../utils';
+import { SERVER_URL } from '../constants';
 
 const nearConfig = getConfig(process.env.NODE_ENV || 'development')
 
@@ -15,7 +16,7 @@ function Claim() {
 
     useEffect(async () => {
         try {
-            let response = await axios.get('http://localhost:4000/api/campaigns');
+            let response = await axios.get(`${SERVER_URL}/api/campaigns`);
             console.log(response)
             let campaign_list = response["data"]["data"]["result"];
             setCampaigns(campaign_list);
@@ -45,6 +46,12 @@ function Claim() {
 }
 
 const CampaignItem = ({airdrop_id, ft_symbol, ft_icon, owner, ft_name, leave, merkle_root, tokenAddress}) => {
+    const [loading, setLoading] = useState(false);
+
+    const toggle = (checked) => {
+        setLoading(checked);
+    };
+
     const content = ft_name.concat(" (").concat(ft_symbol).concat(")");
     const href = nearConfig.explorerUrl + "/accounts/" + ft_name;
     console.log(`Merkle root: ${airdrop_id}`, merkle_root)
@@ -72,6 +79,7 @@ const CampaignItem = ({airdrop_id, ft_symbol, ft_icon, owner, ft_name, leave, me
     const handleClaim = async () => {
         
         try {
+            setLoading(true)
             let result = await window.contract.claim({
                 airdrop_id: airdrop_id,
                 proof: proof,
@@ -85,14 +93,17 @@ const CampaignItem = ({airdrop_id, ft_symbol, ft_icon, owner, ft_name, leave, me
     }
 
     return (
-        <List.Item style={{width: "70vw", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
-            <List.Item.Meta 
-                avatar={<Avatar src={ft_icon} size={"large"} style={{border: "1px solid gray"}}/>}
-                title={<a href={href} target="_blank">{content}</a>}
-                description={description}
-            />
-            <Btn airdrop_id={airdrop_id} proof={proof} handleClaim={handleClaim} />
-        </List.Item>
+        <Spin spinning={loading}>
+            <List.Item style={{width: "70vw", display: "flex", justifyContent: "space-between", alignItems: "center"}}>
+                <List.Item.Meta 
+                    avatar={<Avatar src={ft_icon} size={"large"} style={{border: "1px solid gray"}}/>}
+                    title={<a href={href} target="_blank">{content}</a>}
+                    description={description}
+                />
+                <Btn airdrop_id={airdrop_id} proof={proof} handleClaim={handleClaim} />
+            </List.Item>
+        </Spin>
+        
     )
 }
 

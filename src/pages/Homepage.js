@@ -6,6 +6,7 @@ import {login, parseTokenWithDecimals, buildMerkleTree} from "../utils";
 import { functionCall } from 'near-api-js/lib/transaction';
 import getConfig from '../config';
 import axios from 'axios';
+import { SERVER_URL } from '../constants';
 
 const nearConfig = getConfig(process.env.NODE_ENV || 'development')
 
@@ -53,7 +54,10 @@ function Homepage() {
             
             // save csv content in mongodb
             const obj =  { owner: window.accountId, merkle_root: root, tokenAddress: tokenAddress, leave: leave, ft_name: ft_name, ft_symbol: ft_symbol, ft_icon: ft_icon }
-            await axios.post('http://localhost:4000/api/campaigns/', obj);
+            await axios.post(`${SERVER_URL}/api/campaigns/`, obj, {
+                'Access-Control-Allow-Origin' : '*',
+                'Access-Control-Allow-Methods':'GET,PUT,POST,DELETE,PATCH,OPTIONS',
+                });
 
             // create airdrop
             let amount = ft_balance.toString();
@@ -106,7 +110,6 @@ function Homepage() {
             if (line != '') {
                 l.push(line);
                 let arr = line.split(regex);
-                console.log("arr: ", arr);
                 balance += parseInt(arr[1])
             }
         }
@@ -151,6 +154,7 @@ function Homepage() {
     console.log("leave: ", leave);
     console.log("user addresses: ", userAddresses);
     console.log("balance: ", ft_balance);
+    console.log("Server URL: ", SERVER_URL)
 
     return (
         <div style={{ display: 'flex', justifyContent: 'center'}}>
