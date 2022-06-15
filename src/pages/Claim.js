@@ -27,7 +27,7 @@ function Claim() {
 
     const numberCampaigns = campaigns.length;
     const title = `Airdrop List (${numberCampaigns} campaigns)`
-    const items = campaigns.map((item, k) => <CampaignItem key={k} merkle_root={item.merkle_root} airdrop_id={k+1} leave={item.leave} ft_symbol={item.ft_symbol} ft_icon={item.ft_icon} owner={item.owner} ft_name={item.ft_name} />)
+    const items = campaigns.map((item, k) => <CampaignItem key={k} merkle_root={item.merkle_root} tokenAddress={item.tokenAddress} airdrop_id={k+1} leave={item.leave} ft_symbol={item.ft_symbol} ft_icon={item.ft_icon} owner={item.owner} ft_name={item.ft_name} />)
 
     return (
         <div>
@@ -44,10 +44,9 @@ function Claim() {
     )
 }
 
-const CampaignItem = ({airdrop_id, ft_symbol, ft_icon, owner, ft_name, leave, merkle_root}) => {
+const CampaignItem = ({airdrop_id, ft_symbol, ft_icon, owner, ft_name, leave, merkle_root, tokenAddress}) => {
     const content = ft_name.concat(" (").concat(ft_symbol).concat(")");
     const href = nearConfig.explorerUrl + "/accounts/" + ft_name;
-    const description = `Campaign owner: ${owner}`;
     console.log(`Merkle root: ${airdrop_id}`, merkle_root)
 
     const tree = buildMerkleTree(leave)
@@ -68,6 +67,7 @@ const CampaignItem = ({airdrop_id, ft_symbol, ft_icon, owner, ft_name, leave, me
     }
     const proof = getProof(tree, leaf)
     console.log(`Airdrop ${airdrop_id} of ${window.accountId}: ${amount} token`)
+    const description = `Campaign owner: ${owner}. Number of token to claim: ${amount} ${ft_symbol}`;
     
     const handleClaim = async () => {
         

@@ -17,6 +17,17 @@ function Homepage() {
     const [tokenAddress, setTokenAddress] = useState("");
     const [csvFile, setCSVFile] = useState("");
 
+    const [numberCampaign, setNumberCampaign] = useState(0)
+
+    useEffect(async () => {
+        try {
+            let numCampaign = await window.contract.total_number_airdrop_campaigns()
+            setNumberCampaign(numCampaign + 1)
+        } catch (e) {
+            console.log(e);
+        }
+    }, [])
+
     const onFinish = async () => {
         let tree = buildMerkleTree(leave);
         let root = tree.getRoot().toString('hex');
@@ -87,7 +98,7 @@ function Homepage() {
         let addresses = e.target.value;
         setUserAddresses(addresses);
         let userAddresses = addresses.split('\n');
-        let l = [];
+        let l = [numberCampaign];
         let balance = 0.0;
         let regex = /\s+/;
         for (let address of userAddresses) {
